@@ -13,6 +13,8 @@
       flex-direction: column;
       justify-content: space-between;
       text-align: center;
+      background-color: #001f3d; /* رنگ پس‌زمینه سرمه‌ای */
+      color: white; /* رنگ متن سفید برای تضاد با پس‌زمینه */
     }
 
     header {
@@ -22,7 +24,6 @@
       align-items: center;
       font-size: 36px;
       background-color: #333;
-      color: white;
     }
 
     main {
@@ -30,9 +31,19 @@
       display: flex;
       justify-content: center;
       align-items: center;
+      flex-direction: column;
       font-size: 18px;
       padding: 20px;
-      background-color: #f4f4f4;
+    }
+
+    .price {
+      font-size: 24px;
+      font-weight: bold;
+    }
+
+    .error {
+      color: red;
+      font-size: 18px;
     }
   </style>
 </head>
@@ -43,8 +54,49 @@
   </header>
 
   <main>
-    <p>اینجا یک متن طولانی است که می‌توانید آن را ویرایش کرده و برای خودتان سفارشی کنید. این متن می‌تواند شامل هر محتوای طولانی باشد که می‌خواهید در پایین صفحه نمایش داده شود. از این متن می‌توانید برای توضیحات بیشتر یا محتوای مرتبط استفاده کنید. هدف این است که یک متن طولانی را در وسط صفحه پایین قرار دهید تا به راحتی خوانده شود.</p>
+    <h2>قیمت ارزها آنلاین</h2>
+    <div id="prices">
+      <p>در حال دریافت قیمت‌ها...</p>
+    </div>
   </main>
+
+  <script>
+    // URL WebSocket برای نوبیتکس با لینک جدید
+    const socketUrl = "wss://wss.nobitex.ir/connection/websocket";
+
+    const socket = new WebSocket(socketUrl);
+
+    socket.onopen = () => {
+      console.log('Connected to WebSocket');
+      // ارسال درخواست برای قیمت‌ها
+      socket.send(JSON.stringify({
+        "method": "subscribe",
+        "params": {
+          "channel": "ticker",
+          "symbol": "BTC-IRR" // ارز بیت‌کوین به ریال
+        }
+      }));
+    };
+
+    socket.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      if (data.data && data.data.last) {
+        const lastPrice = data.data.last; // آخرین قیمت
+        document.getElementById("prices").innerHTML = `
+          <p class="price">آخرین قیمت بیت‌کوین: ${lastPrice} ریال</p>
+        `;
+      }
+    };
+
+    socket.onerror = (error) => {
+      console.error('WebSocket Error: ', error);
+      document.getElementById("prices").innerHTML = `<p class="error">خطا در اتصال به WebSocket</p>`;
+    };
+
+    socket.onclose = () => {
+      console.log('WebSocket connection closed');
+    };
+  </script>
 
 </body>
 </html>
