@@ -64,38 +64,108 @@
     // URL WebSocket برای نوبیتکس با لینک جدید
     const socketUrl = "wss://wss.nobitex.ir/connection/websocket";
 
-    const socket = new WebSocket(socketUrl);
+    const symbols = [
+      { symbol: "USDTIRT", title: "دلار", unit: "تومان", factor: 0.1 },
+      { symbol: "BTCUSDT", title: "بیتکوین", unit: "دلار", factor: 1 },
+      { symbol: "XAUTUSDT", title: "طلای جهانی", unit: "دلار", factor: 1 },
+    ];
 
-    socket.onopen = () => {
-      console.log('Connected to WebSocket');
-      // ارسال درخواست برای قیمت‌ها
-      socket.send(JSON.stringify({
-        "method": "subscribe",
-        "params": {
-          "channel": "ticker",
-          "symbol": "BTC-IRR" // ارز بیت‌کوین به ریال
-        }
-      }));
+    const escapeMarkdown = (text) => {
+      return text.replace(/([*_`\[\]()])/g, '\\$1');
     };
 
-    socket.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-      if (data.data && data.data.last) {
-        const lastPrice = data.data.last; // آخرین قیمت
-        document.getElementById("prices").innerHTML = `
-          <p class="price">آخرین قیمت بیت‌کوین: ${lastPrice} ریال</p>
-        `;
-      }
+    const messages = [];
+
+    const savePriceToKV = async (key, price) => {
+      // ذخیره قیمت در Storage محلی (در اینجا برای مثال از localStorage استفاده کرده‌ایم)
+      localStorage.setItem(key, price.toString());
     };
 
-    socket.onerror = (error) => {
-      console.error('WebSocket Error: ', error);
-      document.getElementById("prices").innerHTML = `<p class="error">خطا در اتصال به WebSocket</p>`;
+    const getLastPriceFromKV = async (key) => {
+      const lastPrice = localStorage.getItem(key);
+      return lastPrice ? parseFloat(lastPrice) : null;
     };
 
-    socket.onclose = () => {
-      console.log('WebSocket connection closed');
-    };
+    for (const { symbol, title, unit, factor } of symbols) {
+      await new Promise((resolve, reject) => {
+        const ws = new WebSocket(socketUrl);
+
+        ws.onopen = () => {
+          console.log(`Connected to WebSocket for ${symbol}.`);
+
+          ws.send(JSON.stringify({
+            connect: { name: 'js' },
+            id: 3,
+          }));
+
+          ws.send(JSON.stringify({
+            subscribe: {
+              channel: `public:orderbook-${symbol}`,
+              recover: true,
+              offset: 0,
+              epoch: '0',
+              delta: 'fossil',
+            },
+            id: 4,
+          }));
+        };
+
+        ws.onmessage = async (event) => {
+          try {
+            const message = JSON.parse(event.data);
+            if (message.id === 4 && message.subscribe && message.subscribe.publications) {
+              const publication = message.subscribe.publications[0];
+              if (publication && publication.data) {
+                const parsedData = JSON.parse(publication.data);
+                if (parsedData.asks && parsedData.asks.length > 0) {
+                  let current_price = parsedData.asks[0][0];
+
+                  current_price *= factor;
+
+                  const lastPrice = await getLastPriceFromKV(symbol);
+                  let trend = '';
+
+                  if (lastPrice !== null) {
+                    trend = current_price > lastPrice ? '🟩' : current_price < lastPrice ? '🟥' : '⬜️';
+                  }
+
+                  await savePriceToKV(symbol, current_price);
+
+                  const formattedNumber = new Intl.NumberFormat('en-US').format(current_price);
+
+                  // ساخت پیام با Markdown (تایتل و واحد با حروف درشت)
+                  messages.push(`${trend} **${escapeMarkdown(title)}**: ${formattedNumber} **${escapeMarkdown(unit)}**`);
+
+                  ws.close();
+                  resolve();
+                }
+              }
+            }
+          } catch (error) {
+            console.error(`Error parsing message for ${symbol}:`, error);
+            ws.close();
+            reject();
+          }
+        };
+
+        ws.onerror = (error) => {
+          console.error(`WebSocket error for ${symbol}:`, error);
+          reject();
+        };
+
+        ws.onclose = () => {
+          console.log(`WebSocket connection closed for ${symbol}.`);
+        };
+      });
+    }
+
+    if (messages.length > 0) {
+      // نمایش پیام‌ها در سایت
+      document.getElementById("prices").innerHTML = messages.join('<br />');
+    } else {
+      document.getElementById("prices").innerHTML = `<p class="error">خطا در دریافت قیمت‌ها.</p>`;
+    }
+
   </script>
 
 </body>
