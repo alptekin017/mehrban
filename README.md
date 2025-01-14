@@ -9,13 +9,16 @@
       font-family: Arial, sans-serif;
       margin: 0;
       padding: 0;
-      background-color: #f4f4f4;
+      background-image: url('https://via.placeholder.com/1920x1080?text=Bitcoin+Chart'); /* تصویر پس‌زمینه */
+      background-size: cover;
+      background-position: center;
+      color: white;
     }
 
     header {
-      background-color: #333;
+      background-color: rgba(0, 0, 0, 0.6); /* پس‌زمینه نیمه شفاف */
       color: white;
-      padding: 10px 20px;
+      padding: 20px;
       text-align: center;
     }
 
@@ -23,7 +26,7 @@
       position: fixed;
       top: 0;
       left: 0;
-      background-color: #222;
+      background-color: rgba(0, 0, 0, 0.7); /* پس‌زمینه نیمه شفاف برای منو */
       width: 200px;
       height: 100%;
       padding-top: 20px;
