@@ -3,95 +3,48 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>وب‌سایت مهربان سلاق</title>
+  <title>Mehrban Salagh</title>
   <style>
     body {
       font-family: Arial, sans-serif;
       margin: 0;
-      padding: 0;
-      background-image: url('https://via.placeholder.com/1920x1080?text=Bitcoin+Chart'); /* تصویر پس‌زمینه */
-      background-size: cover;
-      background-position: center;
-      color: white;
-    }
-
-    header {
-      background-color: rgba(0, 0, 0, 0.6); /* پس‌زمینه نیمه شفاف */
-      color: white;
-      padding: 20px;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
       text-align: center;
     }
 
-    nav {
-      position: fixed;
-      top: 0;
-      left: 0;
-      background-color: rgba(0, 0, 0, 0.7); /* پس‌زمینه نیمه شفاف برای منو */
-      width: 200px;
-      height: 100%;
-      padding-top: 20px;
-    }
-
-    nav a {
-      color: white;
-      text-decoration: none;
-      display: block;
-      padding: 15px;
-      margin: 5px 0;
-    }
-
-    nav a:hover {
-      background-color: #575757;
-    }
-
-    .content {
-      margin-left: 220px;
-      padding: 20px;
-    }
-
-    h1 {
+    header {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+      align-items: center;
       font-size: 36px;
-      margin-bottom: 20px;
+      background-color: #333;
+      color: white;
     }
 
-    .section {
-      margin-top: 20px;
-    }
-
-    .section img {
-      width: 100%;
-      max-width: 400px;
-      margin: 10px 0;
+    main {
+      flex: 3;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 18px;
+      padding: 20px;
+      background-color: #f4f4f4;
     }
   </style>
 </head>
 <body>
+
   <header>
-    <h1>مهربان سلاق</h1>
+    <h1>Mehrban Salagh</h1>
   </header>
 
-  <nav>
-    <a href="#home">خانه</a>
-    <a href="#photos">عکس</a>
-    <a href="#videos">فیلم</a>
-  </nav>
+  <main>
+    <p>اینجا یک متن طولانی است که می‌توانید آن را ویرایش کرده و برای خودتان سفارشی کنید. این متن می‌تواند شامل هر محتوای طولانی باشد که می‌خواهید در پایین صفحه نمایش داده شود. از این متن می‌توانید برای توضیحات بیشتر یا محتوای مرتبط استفاده کنید. هدف این است که یک متن طولانی را در وسط صفحه پایین قرار دهید تا به راحتی خوانده شود.</p>
+  </main>
 
-  <div class="content">
-    <div id="home" class="section">
-      <h2>خانه</h2>
-      <p>به سایت مهربان سلاق خوش آمدید!</p>
-    </div>
-
-    <div id="photos" class="section">
-      <h2>عکس‌ها</h2>
-      <img src="https://via.placeholder.com/400" alt="Photo 1">
-      <img src="https://via.placeholder.com/400" alt="Photo 2">
-    </div>
-
-    <div id="videos" class="section">
-      <h2>فیلم‌ها</h2>
-      <p>در اینجا فیلم‌ها نمایش داده خواهند شد.</p>
-    </div>
-  </div>
 </body>
 </html>
