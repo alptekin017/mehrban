@@ -1,4 +1,4 @@
-
+<!DOCTYPE html>
 <html lang="fa">
 <head>
   <meta charset="UTF-8">
@@ -41,60 +41,34 @@
 
   <script>
     async function fetchPrices() {
-      const socketUrl = "wss://ws.nobitex.ir/";
-      const symbols = [
-        { symbol: "USDTIRT", title: "دلار", unit: "تومان", factor: 0.1 },
-        { symbol: "BTCUSDT", title: "بیتکوین", unit: "دلار", factor: 1 },
-        { symbol: "XAUTUSDT", title: "طلای جهانی", unit: "دلار", factor: 1 }
-      ];
+      const url = "https://api.nobitex.ir/market/stats";
+      const symbols = {
+        "USDTIRT": { title: "دلار", unit: "تومان", factor: 0.1 },
+        "BTCUSDT": { title: "بیتکوین", unit: "دلار", factor: 1 },
+        "XAUTUSDT": { title: "طلای جهانی", unit: "دلار", factor: 1 }
+      };
 
-      const messages = [];
-      const escapeMarkdown = (text) => text.replace(/([*_`\[\]()])/g, '\\$1');
+      try {
+        const response = await fetch(url);
+        const data = await response.json();
+        const messages = [];
 
-      for (const { symbol, title, unit, factor } of symbols) {
-        await new Promise((resolve, reject) => {
-          const ws = new WebSocket(socketUrl);
-
-          ws.onopen = () => {
-            ws.send(JSON.stringify({
-              "type": "subscribe",
-              "channels": [{ "name": "ticker", "market": symbol.toLowerCase() }]
-            }));
-
-            setInterval(() => {
-              ws.send(JSON.stringify({ "type": "ping" }));
-            }, 30000);
-          };
-
-          ws.onmessage = (event) => {
-            try {
-              const data = JSON.parse(event.data);
-              if (data && data.price) {
-                let current_price = parseFloat(data.price) * factor;
-                const formattedNumber = new Intl.NumberFormat('en-US').format(current_price);
-
-                messages.push(`📌 **${escapeMarkdown(title)}**: ${formattedNumber} **${escapeMarkdown(unit)}**`);
-                ws.close();
-                resolve();
-              }
-            } catch (error) {
-              reject();
-            }
-          };
-
-          ws.onerror = (error) => reject();
-          ws.onclose = () => console.log(`Connection closed for ${symbol}`);
+        Object.keys(symbols).forEach(symbol => {
+          if (data.stats[symbol]) {
+            let current_price = parseFloat(data.stats[symbol].last) * symbols[symbol].factor;
+            const formattedNumber = new Intl.NumberFormat('en-US').format(current_price);
+            messages.push(`📌 **${symbols[symbol].title}**: ${formattedNumber} **${symbols[symbol].unit}**`);
+          }
         });
-      }
 
-      if (messages.length > 0) {
         document.getElementById("prices").innerHTML = messages.join('<br />');
-      } else {
+      } catch (error) {
         document.getElementById("prices").innerHTML = `<p class="error">⚠️ خطا در دریافت قیمت‌ها.</p>`;
       }
     }
 
     fetchPrices();
+    setInterval(fetchPrices, 60000); // هر 60 ثانیه یک‌بار بروزرسانی
   </script>
 
 </body>
