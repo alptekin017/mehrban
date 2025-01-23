@@ -19,7 +19,7 @@
   </div>
 
   <script>
-    const cloudflareProxy = "[https://nobitex-proxy.workers.dev](https://siteprice.alptekin017.workers.dev/)"; // آدرس Worker خودت را جایگزین کن
+    const cloudflareProxy = "(https://siteprice.alptekin017.workers.dev/)"; // آدرس Worker خودت را جایگزین کن
 
     async function fetchPrices() {
       try {
