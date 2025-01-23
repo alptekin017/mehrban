@@ -50,6 +50,9 @@
 
       try {
         const response = await fetch(url);
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
         const data = await response.json();
         const messages = [];
 
@@ -63,6 +66,7 @@
 
         document.getElementById("prices").innerHTML = messages.join('<br />');
       } catch (error) {
+        console.error("Error fetching prices:", error);
         document.getElementById("prices").innerHTML = `<p class="error">⚠️ خطا در دریافت قیمت‌ها.</p>`;
       }
     }
