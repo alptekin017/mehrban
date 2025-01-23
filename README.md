@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Mehrban Salagh</title>
+  <title>Mehrban Salagh | قیمت لحظه‌ای ارزها</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -11,36 +11,21 @@
       height: 100vh;
       display: flex;
       flex-direction: column;
-      justify-content: space-between;
+      justify-content: center;
+      align-items: center;
       text-align: center;
-      background-color: #001f3d; /* رنگ پس‌زمینه سرمه‌ای */
-      color: white; /* رنگ متن سفید برای تضاد با پس‌زمینه */
+      background-color: #001f3d;
+      color: white;
     }
-
     header {
-      flex: 1;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      font-size: 36px;
-      background-color: #333;
-    }
-
-    main {
-      flex: 3;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      flex-direction: column;
-      font-size: 18px;
-      padding: 20px;
-    }
-
-    .price {
       font-size: 24px;
       font-weight: bold;
+      margin-bottom: 20px;
     }
-
+    .price {
+      font-size: 20px;
+      margin: 10px 0;
+    }
     .error {
       color: red;
       font-size: 18px;
@@ -49,123 +34,67 @@
 </head>
 <body>
 
-  <header>
-    <h1>Mehrban Salagh</h1>
-  </header>
-
-  <main>
-    <h2>قیمت ارزها آنلاین</h2>
-    <div id="prices">
-      <p>در حال دریافت قیمت‌ها...</p>
-    </div>
-  </main>
+  <header>💰 قیمت لحظه‌ای ارزها</header>
+  <div id="prices">
+    <p>⏳ در حال دریافت قیمت‌ها...</p>
+  </div>
 
   <script>
-    // URL WebSocket برای نوبیتکس با لینک جدید
-    const socketUrl = "wss://wss.nobitex.ir/connection/websocket";
+    async function fetchPrices() {
+      const socketUrl = "wss://ws.nobitex.ir/";
+      const symbols = [
+        { symbol: "USDTIRT", title: "دلار", unit: "تومان", factor: 0.1 },
+        { symbol: "BTCUSDT", title: "بیتکوین", unit: "دلار", factor: 1 },
+        { symbol: "XAUTUSDT", title: "طلای جهانی", unit: "دلار", factor: 1 }
+      ];
 
-    const symbols = [
-      { symbol: "USDTIRT", title: "دلار", unit: "تومان", factor: 0.1 },
-      { symbol: "BTCUSDT", title: "بیتکوین", unit: "دلار", factor: 1 },
-      { symbol: "XAUTUSDT", title: "طلای جهانی", unit: "دلار", factor: 1 },
-    ];
+      const messages = [];
+      const escapeMarkdown = (text) => text.replace(/([*_`\[\]()])/g, '\\$1');
 
-    const escapeMarkdown = (text) => {
-      return text.replace(/([*_`\[\]()])/g, '\\$1');
-    };
+      for (const { symbol, title, unit, factor } of symbols) {
+        await new Promise((resolve, reject) => {
+          const ws = new WebSocket(socketUrl);
 
-    const messages = [];
+          ws.onopen = () => {
+            ws.send(JSON.stringify({
+              "type": "subscribe",
+              "channels": [{ "name": "ticker", "market": symbol.toLowerCase() }]
+            }));
 
-    const savePriceToKV = async (key, price) => {
-      // ذخیره قیمت در Storage محلی (در اینجا برای مثال از localStorage استفاده کرده‌ایم)
-      localStorage.setItem(key, price.toString());
-    };
+            setInterval(() => {
+              ws.send(JSON.stringify({ "type": "ping" }));
+            }, 30000);
+          };
 
-    const getLastPriceFromKV = async (key) => {
-      const lastPrice = localStorage.getItem(key);
-      return lastPrice ? parseFloat(lastPrice) : null;
-    };
+          ws.onmessage = (event) => {
+            try {
+              const data = JSON.parse(event.data);
+              if (data && data.price) {
+                let current_price = parseFloat(data.price) * factor;
+                const formattedNumber = new Intl.NumberFormat('en-US').format(current_price);
 
-    for (const { symbol, title, unit, factor } of symbols) {
-      await new Promise((resolve, reject) => {
-        const ws = new WebSocket(socketUrl);
-
-        ws.onopen = () => {
-          console.log(`Connected to WebSocket for ${symbol}.`);
-
-          ws.send(JSON.stringify({
-            connect: { name: 'js' },
-            id: 3,
-          }));
-
-          ws.send(JSON.stringify({
-            subscribe: {
-              channel: `public:orderbook-${symbol}`,
-              recover: true,
-              offset: 0,
-              epoch: '0',
-              delta: 'fossil',
-            },
-            id: 4,
-          }));
-        };
-
-        ws.onmessage = async (event) => {
-          try {
-            const message = JSON.parse(event.data);
-            if (message.id === 4 && message.subscribe && message.subscribe.publications) {
-              const publication = message.subscribe.publications[0];
-              if (publication && publication.data) {
-                const parsedData = JSON.parse(publication.data);
-                if (parsedData.asks && parsedData.asks.length > 0) {
-                  let current_price = parsedData.asks[0][0];
-
-                  current_price *= factor;
-
-                  const lastPrice = await getLastPriceFromKV(symbol);
-                  let trend = '';
-
-                  if (lastPrice !== null) {
-                    trend = current_price > lastPrice ? '🟩' : current_price < lastPrice ? '🟥' : '⬜️';
-                  }
-
-                  await savePriceToKV(symbol, current_price);
-
-                  const formattedNumber = new Intl.NumberFormat('en-US').format(current_price);
-
-                  // ساخت پیام با Markdown (تایتل و واحد با حروف درشت)
-                  messages.push(`${trend} **${escapeMarkdown(title)}**: ${formattedNumber} **${escapeMarkdown(unit)}**`);
-
-                  ws.close();
-                  resolve();
-                }
+                messages.push(`📌 **${escapeMarkdown(title)}**: ${formattedNumber} **${escapeMarkdown(unit)}**`);
+                ws.close();
+                resolve();
               }
+            } catch (error) {
+              reject();
             }
-          } catch (error) {
-            console.error(`Error parsing message for ${symbol}:`, error);
-            ws.close();
-            reject();
-          }
-        };
+          };
 
-        ws.onerror = (error) => {
-          console.error(`WebSocket error for ${symbol}:`, error);
-          reject();
-        };
+          ws.onerror = (error) => reject();
+          ws.onclose = () => console.log(`Connection closed for ${symbol}`);
+        });
+      }
 
-        ws.onclose = () => {
-          console.log(`WebSocket connection closed for ${symbol}.`);
-        };
-      });
+      if (messages.length > 0) {
+        document.getElementById("prices").innerHTML = messages.join('<br />');
+      } else {
+        document.getElementById("prices").innerHTML = `<p class="error">⚠️ خطا در دریافت قیمت‌ها.</p>`;
+      }
     }
 
-    if (messages.length > 0) {
-      // نمایش پیام‌ها در سایت
-      document.getElementById("prices").innerHTML = messages.join('<br />');
-    } else {
-      document.getElementById("prices").innerHTML = `<p class="error">خطا در دریافت قیمت‌ها.</p>`;
-    }
-
+    fetchPrices();
   </script>
 
 </body>
